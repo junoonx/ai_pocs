@@ -22,6 +22,7 @@ PROJECT_ID="${GCP_PROJECT_ID:-$(gcloud config get-value project 2>/dev/null || e
 REGION="${GCP_REGION:-us-central1}"
 SERVICE_NAME="sharepoint-mcp-server"
 DEPLOY_MOCK="${MOCK_MODE:-false}"
+ALLOW_UNAUTH="${ALLOW_UNAUTHENTICATED:-false}"
 
 usage() {
     echo "Usage: $0 [OPTIONS]"
@@ -30,6 +31,7 @@ usage() {
     echo "  -p, --project PROJECT_ID   Target Google Cloud Project ID (default: current gcloud project)"
     echo "  -r, --region REGION        Target GCP region (default: us-central1)"
     echo "  -m, --mock                 Deploy in standalone Mock Sandbox mode (zero M365 dependency)"
+    echo "  --allow-unauthenticated    Allow unauthenticated ingress (for direct OAuth bearer token forwarding)"
     echo "  -h, --help                 Show this help message"
     echo ""
     exit 1
@@ -41,6 +43,7 @@ while [[ $# -gt 0 ]]; do
         -p|--project) PROJECT_ID="$2"; shift 2 ;;
         -r|--region) REGION="$2"; shift 2 ;;
         -m|--mock) DEPLOY_MOCK="true"; shift ;;
+        --allow-unauthenticated) ALLOW_UNAUTH="true"; shift ;;
         -h|--help) usage ;;
         *) echo "Unknown option: $1"; usage ;;
     esac
@@ -115,7 +118,7 @@ echo "☁️  Building container and deploying private service to Cloud Run..."
 gcloud run deploy "$SERVICE_NAME" \
     --source "$SERVER_DIR" \
     --region "$REGION" \
-    --no-allow-unauthenticated \
+    $([ "$ALLOW_UNAUTH" = "true" ] && echo "--allow-unauthenticated" || echo "--no-allow-unauthenticated") \
     --port 3000 \
     "${ENV_ARGS[@]}"
 

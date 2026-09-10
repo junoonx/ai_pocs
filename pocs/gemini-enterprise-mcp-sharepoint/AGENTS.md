@@ -6,8 +6,8 @@ This document defines implementation rules, architectural invariants, and securi
 
 ## 1. Concurrency & Lifecycle Invariants
 
-### AsyncLocalStorage Request Isolation
-- **Singleton Server Pattern**: Never re-instantiate `@modelcontextprotocol/sdk` `Server` or `StreamableHTTPServerTransport` inside HTTP request callbacks.
+### AsyncLocalStorage Request Isolation & Stateless Transport Factory
+- **Stateless Transport Factory Pattern**: In accordance with the `@modelcontextprotocol/sdk` specification for stateless HTTP (`sessionIdGenerator: undefined`), instantiate a dedicated stateless transport and server per incoming HTTP request, closing both upon response completion (`res.on('close', ...)`).
 - **Thread/Context Safety**: The HTTP listener must execute all transport logic inside `requestContext.run({ authHeader: req.headers.authorization }, ...)` using Node.js `node:async_hooks`.
 - **Zero Global State Collisions**: Tool handlers (`CallToolRequestSchema`) must extract delegated tokens strictly from `requestContext.getStore()`. Never store authorization headers in global variables.
 
@@ -42,6 +42,6 @@ This document defines implementation rules, architectural invariants, and securi
 
 ## 4. Operational Modes: Mock Sandbox vs. Live Graph
 
-- When `MOCK_MODE=true` (or when credentials are omitted), all 12 tools must respond using local JSON fixtures from `mock_data/sites.json` and `mock_data/files.json`.
+- When `MOCK_MODE=true` (or when credentials are omitted), all 13 tools must respond using local JSON fixtures from `mock_data/sites.json` and `mock_data/files.json`.
 - The mock provider must simulate Purview blocks and DLP masking so that evaluation and demonstration workflows function identically to production.
 - When `READ_ONLY_MODE=true`, all mutating tools (`sharepoint_upload_file`, `sharepoint_create_folder`, `sharepoint_update_file`, `sharepoint_rename_item`, `sharepoint_delete_item`) must be rejected with an operational block notice.

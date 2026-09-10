@@ -67,7 +67,7 @@ ai_pocs/pocs/<poc-name>/
      - **Mode 1: Live SaaS** (Prompts for live tenant credentials and generates `.env`).
      - **Mode 2: Standalone Mock Sandbox** (Sets `MOCK_MODE=true` with zero credential barriers for instant Day 1 customer demonstrations).
    - Must provide a prompt offering to execute automated Cloud Run deployment immediately.
-   - Must output a direct clickable link to [`INSTALL.md`](file:///...) upon completion.
+   - Must output a direct clickable `file://` link to `INSTALL.md` upon completion.
 2. **Master Launcher Compatibility (`setup.sh`)**:
    - The root script `./setup.sh` must dynamically discover the PoC and support execution via `./setup.sh <poc-name>`.
 3. **Statistical Hillclimbing Evaluation Suite (`evals/`)**:

@@ -20,7 +20,7 @@ Before starting, ensure you have:
 Clone the repository and copy the environment template:
 
 ```bash
-cd gemini-enterprise-mcp-sharepoint
+cd pocs/gemini-enterprise-mcp-sharepoint
 cp .env.example .env
 ```
 
@@ -69,7 +69,7 @@ The script automatically:
 
 ## Step 3: Validate MCP Handshake & Tools List
 
-Run a test against your Cloud Run service to verify that all 12 tools are registered and responsive:
+Run a test against your Cloud Run service to verify that all 13 tools are registered and responsive:
 
 ```bash
 LIVE_URL="https://sharepoint-mcp-server-XXXXXXXXXXXX.us-central1.run.app/mcp"

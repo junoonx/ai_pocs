@@ -97,11 +97,11 @@ Unlike traditional enterprise search architectures that copy documents into inte
 
 ---
 
-## 3. Concurrency Safety: AsyncLocalStorage Isolation
+## 3. Concurrency Safety: AsyncLocalStorage & Stateless Transport Factory
 
-To avoid token collisions across concurrent users while maintaining high throughput:
+To avoid token collisions across concurrent users while maintaining high throughput and conforming strictly to the `@modelcontextprotocol/sdk` specification:
 
-* The `@modelcontextprotocol/sdk` `Server` and `StreamableHTTPServerTransport` are initialized as **singletons** at server startup.
+* The server implements the **Stateless Transport Factory Pattern** (`sessionIdGenerator: undefined`, `enableJsonResponse: true`), provisioning a dedicated transport and server instance per request to guarantee zero message ID collisions.
 * When incoming HTTP requests hit `/mcp`, the handler wraps execution inside Node.js `AsyncLocalStorage`:
 
 ```javascript
@@ -109,11 +109,21 @@ export const requestContext = new AsyncLocalStorage();
 
 // Inside HTTP request listener:
 await requestContext.run({ authHeader: req.headers.authorization }, async () => {
-    await transport.handleRequest(reqProxy, res);
+    const sessionServer = createMcpServer();
+    const sessionTransport = new StreamableHTTPServerTransport({
+        sessionIdGenerator: undefined,
+        enableJsonResponse: true
+    });
+    await sessionServer.connect(sessionTransport);
+    await sessionTransport.handleRequest(req, res);
+    res.on("close", () => {
+        sessionTransport.close().catch(() => {});
+        sessionServer.close().catch(() => {});
+    });
 });
 ```
 
-When a tool executes via `mcpServer.setRequestHandler(CallToolRequestSchema)`, `requestContext.getStore()` retrieves the exact delegated user token for that specific asynchronous execution chain without any shared global state.
+When a tool executes via `serverInstance.setRequestHandler(CallToolRequestSchema)`, `requestContext.getStore()` retrieves the exact delegated user token for that specific asynchronous execution chain without any shared global state.
 
 ---
 

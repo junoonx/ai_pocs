@@ -34,6 +34,20 @@ TARGET_POC=""
 # 1. Check if PoC was passed via command-line argument
 if [ $# -ge 1 ]; then
     ARG_POC="$1"
+
+    if [ "$ARG_POC" = "-h" ] || [ "$ARG_POC" = "--help" ]; then
+        echo "Usage: $0 [POC_NAME | POC_NUMBER]"
+        echo ""
+        echo "Launches the interactive pre-flight setup questionnaire and deployer for a PoC."
+        echo ""
+        echo "Available PoCs:"
+        for i in "${!POCS[@]}"; do
+            echo "  [$((i+1))] ${POCS[$i]}"
+        done
+        echo ""
+        exit 0
+    fi
+
     # Match by exact name or number
     if [[ "$ARG_POC" =~ ^[0-9]+$ ]] && [ "$ARG_POC" -ge 1 ] && [ "$ARG_POC" -le ${#POCS[@]} ]; then
         TARGET_POC="${POCS[$((ARG_POC-1))]}"

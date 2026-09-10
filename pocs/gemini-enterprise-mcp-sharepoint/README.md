@@ -96,11 +96,11 @@ nano .env
 4. Enter your Cloud Run endpoint (must include `/mcp`):
    `https://sharepoint-mcp-server-XXXXXXXXXXXX.us-central1.run.app/mcp`
 5. Configure OAuth 2.0 per [PREREQUISITES.md](./PREREQUISITES.md).
-6. Enable all 12 custom actions and connect the data store to your Gemini Enterprise App!
+6. Enable all 13 custom actions and connect the data store to your Gemini Enterprise App!
 
 ---
 
-## 🛠️ The 12 Granular Tools
+## 🛠️ The 13 Granular Tools
 
 | Tool Name | Operation Category | Description |
 | :--- | :--- | :--- |
@@ -116,6 +116,7 @@ nano .env
 | `sharepoint_update_file` | Mutation | Modifies or appends findings to existing documents. |
 | `sharepoint_rename_item` | Mutation | Standardizes document naming conventions. |
 | `sharepoint_delete_item` | Mutation | Deletes deprecated documents under enterprise approval workflows. |
+| `sharepoint_get_suggested_prompts` | Adoption / Starters | Surfaces dynamic, context-aware prompt chips and persona lenses (Executive, Auditor). |
 
 ---
 

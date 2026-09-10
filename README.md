@@ -29,7 +29,7 @@ To launch and configure any PoC, run the master orchestrator from the repository
 
 | PoC Identifier | Name & Focus Area | Target Platforms | Key Capabilities |
 | :--- | :--- | :--- | :--- |
-| **[`gemini-enterprise-mcp-sharepoint`](./pocs/gemini-enterprise-mcp-sharepoint/)** | OmniShare-MCP | Gemini Enterprise & Microsoft 365 | Zero-copy discovery, Word/PPTX/Excel/PDF parsing, Microsoft Purview RMS encryption defense, Cloud DLP de-identification, and 12 custom MCP actions. |
+| **[`gemini-enterprise-mcp-sharepoint`](./pocs/gemini-enterprise-mcp-sharepoint/)** | OmniShare-MCP | Gemini Enterprise & Microsoft 365 | Zero-copy discovery, Word/PPTX/Excel/PDF parsing, Purview RMS defense, Cloud DLP masking, and 13 enterprise tools (including Dynamic Prompt Starters & Persona Lenses). |
 
 ---
 
