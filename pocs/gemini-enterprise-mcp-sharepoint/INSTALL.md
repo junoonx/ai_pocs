@@ -82,7 +82,7 @@ curl -s -X POST "$LIVE_URL" \
   -d '{"jsonrpc": "2.0", "method": "tools/list", "id": 1}' | jq .
 ```
 
-*Expected output: JSON-RPC response listing all 12 tools (`sharepoint_search_files`, `sharepoint_read_file`, etc.).*
+*Expected output: JSON-RPC response listing all 13 tools (`sharepoint_search_files`, `sharepoint_read_file`, `sharepoint_get_suggested_prompts`, etc.).*
 
 ---
 
@@ -122,13 +122,13 @@ curl -s -X POST "$LIVE_URL" \
 
 ---
 
-## Step 5: Enable All 12 Discovered Actions
+## Step 5: Enable All 13 Discovered Actions
 
 1. In Gemini Enterprise Console, click on **Cymbal Universal Data Connector**.
 2. Wait 30–60 seconds for connector status to display **Active**.
 3. Click the **Actions** tab.
 4. Click **Reload custom actions** to query `tools/list`.
-5. Select **Select all rows** (12 resources selected) and click **Enable actions**.
+5. Select **Select all rows** (13 resources selected) and click **Enable actions**.
 6. Verify status displays: *"Data connector actions updated successfully."*
 
 ---

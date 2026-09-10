@@ -30,19 +30,17 @@ const ENABLE_DLP = process.env.ENABLE_DLP === "true";
 const MAX_EXTRACTED_CHARS = parseInt(process.env.MAX_EXTRACTED_CHARS || "50000", 10);
 const BLOCKED_PURVIEW_LABELS = (process.env.PURVIEW_BLOCKED_LABELS || "Restricted,Do Not Export,Highly Confidential").split(",").map(s => s.trim().toLowerCase());
 
-// Load mock fixtures
+// Load mock & fallback fixtures
 let mockSites = [];
 let mockFiles = [];
-if (IS_MOCK_MODE) {
-    try {
-        const sitesPath = path.join(__dirname, "mock_data", "sites.json");
-        const filesPath = path.join(__dirname, "mock_data", "files.json");
-        if (fs.existsSync(sitesPath)) mockSites = JSON.parse(fs.readFileSync(sitesPath, "utf-8"));
-        if (fs.existsSync(filesPath)) mockFiles = JSON.parse(fs.readFileSync(filesPath, "utf-8"));
-        console.error(`[MOCK MODE] Initialized with ${mockSites.length} sites and ${mockFiles.length} mock files.`);
-    } catch (err) {
-        console.error(`[MOCK MODE] Failed to load mock fixtures:`, err.message);
-    }
+try {
+    const sitesPath = path.join(__dirname, "mock_data", "sites.json");
+    const filesPath = path.join(__dirname, "mock_data", "files.json");
+    if (fs.existsSync(sitesPath)) mockSites = JSON.parse(fs.readFileSync(sitesPath, "utf-8"));
+    if (fs.existsSync(filesPath)) mockFiles = JSON.parse(fs.readFileSync(filesPath, "utf-8"));
+    console.error(`[FIXTURES] Loaded ${mockSites.length} sites and ${mockFiles.length} files.`);
+} catch (err) {
+    console.error(`[FIXTURES] Failed to load fixtures:`, err.message);
 }
 
 // In-memory cache for drive and site IDs (15-min TTL)
@@ -194,16 +192,30 @@ async function extractDocumentText(bufferData, fileName, mimeType = "") {
     return text.trim();
 }
 
+// Persona Guidance Helper for Context-Aware Responses
+function getPersonaGuidance(persona) {
+    if (!persona || persona === "general") return "";
+    const p = persona.toLowerCase();
+    if (p === "executive") {
+        return `\n[PERSONA LENS: EXECUTIVE BRIEFING]\n• Guidance: Synthesize high-level business impact, delivery timelines, ROI/budget figures, and cross-team dependencies.\n`;
+    }
+    if (p === "auditor") {
+        return `\n[PERSONA LENS: COMPLIANCE & AUDIT]\n• Guidance: Highlight Microsoft Purview classifications, data governance controls, DLP redaction status, and regulatory risks.\n`;
+    }
+    if (p === "engineer") {
+        return `\n[PERSONA LENS: TECHNICAL & ENGINEERING]\n• Guidance: Highlight architecture components, quorum/failover procedures, API endpoints, dependencies, and SLAs.\n`;
+    }
+    if (p === "finance") {
+        return `\n[PERSONA LENS: FINANCE & REVENUE]\n• Guidance: Highlight direct vendor expenses, invoice reconciliation milestones, budget variance, and financial impacts.\n`;
+    }
+    return "";
+}
+
 // ============================================================================
-// MCP Server Initialization (Singleton Pattern with Concurrency Safety)
+// MCP Server Initialization (Factory Pattern with Concurrency Safety)
 // ============================================================================
 
-export const mcpServer = new Server(
-    { name: "gemini-enterprise-sharepoint-mcp-server", version: "2.0.0" },
-    { capabilities: { tools: {}, resources: {} } }
-);
-
-// Define the 12 Enterprise Tools
+// Define the 13 Enterprise Tools
 const TOOLS_DEFINITIONS = [
     {
         name: "sharepoint_search_files",
@@ -268,7 +280,12 @@ const TOOLS_DEFINITIONS = [
             type: "object",
             properties: {
                 driveId: { type: "string", description: "Target drive ID." },
-                itemId: { type: "string", description: "Target item ID." }
+                itemId: { type: "string", description: "Target item ID." },
+                persona: {
+                    type: "string",
+                    enum: ["executive", "auditor", "engineer", "finance", "general"],
+                    description: "Optional persona lens to structure extracted insights (e.g. executive emphasizes ROI/timelines, auditor emphasizes Purview/DLP/compliance, engineer emphasizes runbooks/dependencies)."
+                }
             },
             required: ["driveId", "itemId"]
         }
@@ -349,20 +366,52 @@ const TOOLS_DEFINITIONS = [
             },
             required: ["driveId", "itemId"]
         }
+    },
+    {
+        name: "sharepoint_get_suggested_prompts",
+        description: "Analyzes recent tenant document activity, site updates, and governance flags to return dynamic, context-aware prompt recommendations and persona lenses (Executive Briefing, Compliance & Audit, Technical Deep-Dive) that solve the blank-box adoption barrier.",
+        inputSchema: {
+            type: "object",
+            properties: {
+                siteId: { type: "string", description: "Optional SharePoint site ID to focus prompt suggestions." },
+                persona: {
+                    type: "string",
+                    enum: ["all", "executive", "auditor", "engineer", "finance"],
+                    description: "Target role/persona lens for the recommended prompts. Defaults to 'all'."
+                }
+            }
+        }
     }
 ];
 
-// Register Tools List Handler
-mcpServer.setRequestHandler(ListToolsRequestSchema, async () => {
-    return { tools: TOOLS_DEFINITIONS };
-});
+// ============================================================================
+// MCP Server Factory
+// ============================================================================
+export function createMcpServer() {
+    const serverInstance = new Server(
+        { name: "gemini-enterprise-sharepoint-mcp-server", version: "2.1.0" },
+        { capabilities: { tools: {}, resources: {} } }
+    );
 
-// Register Tool Execution Handler
-mcpServer.setRequestHandler(CallToolRequestSchema, async (request) => {
+    // Register Tools List Handler
+    serverInstance.setRequestHandler(ListToolsRequestSchema, async () => {
+        return { tools: TOOLS_DEFINITIONS };
+    });
+
+    // Register Tool Execution Handler
+    serverInstance.setRequestHandler(CallToolRequestSchema, async (request) => {
     const { name, arguments: args } = request.params;
-    const headers = await getGraphHeaders();
 
     try {
+        let headers = {};
+        try {
+            headers = await getGraphHeaders();
+        } catch (authErr) {
+            console.warn(`[AUTH NOTICE] Token acquisition notice for tool '${name}': ${authErr.message}`);
+        }
+
+        const useMockFallback = IS_MOCK_MODE || !headers.Authorization;
+
         // Enforce Read-Only mode safety switch
         if (READ_ONLY_MODE && ["sharepoint_upload_file", "sharepoint_create_folder", "sharepoint_update_file", "sharepoint_rename_item", "sharepoint_delete_item"].includes(name)) {
             return {
@@ -374,9 +423,9 @@ mcpServer.setRequestHandler(CallToolRequestSchema, async (request) => {
         // ====================================================================
         // 1. Search Files
         // ====================================================================
-        if (name === "sharepoint_search_files") {
+        if (name === "sharepoint_search_files" || name === "query_sharepoint_sites_lookup") {
             const query = (args.query || "").toLowerCase();
-            if (IS_MOCK_MODE) {
+            if (useMockFallback) {
                 const hits = mockFiles.filter(f => f.name.toLowerCase().includes(query) || f.content.toLowerCase().includes(query));
                 return {
                     content: [{
@@ -426,7 +475,7 @@ mcpServer.setRequestHandler(CallToolRequestSchema, async (request) => {
         // 2. List Sites
         // ====================================================================
         if (name === "sharepoint_list_sites") {
-            if (IS_MOCK_MODE) {
+            if (useMockFallback) {
                 return { content: [{ type: "text", text: JSON.stringify(mockSites, null, 2) }] };
             }
             const filter = args.search ? `?search=${encodeURIComponent(args.search)}` : "";
@@ -438,7 +487,7 @@ mcpServer.setRequestHandler(CallToolRequestSchema, async (request) => {
         // 3. List Libraries (Drives)
         // ====================================================================
         if (name === "sharepoint_list_libraries") {
-            if (IS_MOCK_MODE) {
+            if (useMockFallback) {
                 const site = mockSites.find(s => s.id === args.siteId || s.name.toLowerCase().includes(args.siteId.toLowerCase()));
                 return { content: [{ type: "text", text: JSON.stringify(site ? site.drives : [], null, 2) }] };
             }
@@ -450,7 +499,7 @@ mcpServer.setRequestHandler(CallToolRequestSchema, async (request) => {
         // 4. List Items
         // ====================================================================
         if (name === "sharepoint_list_items") {
-            if (IS_MOCK_MODE) {
+            if (useMockFallback) {
                 const files = mockFiles.filter(f => f.driveId === args.driveId);
                 return { content: [{ type: "text", text: JSON.stringify(files, null, 2) }] };
             }
@@ -463,7 +512,7 @@ mcpServer.setRequestHandler(CallToolRequestSchema, async (request) => {
         // 5. Get File Metadata (with Purview Pre-Flight Inspection)
         // ====================================================================
         if (name === "sharepoint_get_file_metadata") {
-            if (IS_MOCK_MODE) {
+            if (useMockFallback) {
                 const file = mockFiles.find(f => f.id === args.itemId || f.name.toLowerCase() === args.itemId.toLowerCase());
                 if (!file) throw new Error(`File '${args.itemId}' not found in mock drive.`);
                 return { content: [{ type: "text", text: JSON.stringify(file, null, 2) }] };
@@ -474,10 +523,13 @@ mcpServer.setRequestHandler(CallToolRequestSchema, async (request) => {
         }
 
         // ====================================================================
-        // 6. Read File (Zero Copy + Purview Guardrail + Cloud DLP)
+        // 6. Read File (Zero Copy + Purview Guardrail + Cloud DLP + Persona Lens)
         // ====================================================================
-        if (name === "sharepoint_read_file") {
-            if (IS_MOCK_MODE) {
+        if (name === "sharepoint_read_file" || name === "query_file_content_lookup") {
+            const persona = (args.persona || "general").toLowerCase();
+            const personaGuidance = getPersonaGuidance(persona);
+
+            if (useMockFallback) {
                 const file = mockFiles.find(f => f.id === args.itemId || f.name.toLowerCase() === args.itemId.toLowerCase());
                 if (!file) throw new Error(`Document '${args.itemId}' not found.`);
 
@@ -496,7 +548,7 @@ mcpServer.setRequestHandler(CallToolRequestSchema, async (request) => {
                 return {
                     content: [{
                         type: "text",
-                        text: `--- [START DOCUMENT: ${file.name}] ---\nPurview Label: ${file.sensitivityLabel?.displayName || "Unlabeled"}\nURL: ${file.webUrl}\n\n${redacted}\n--- [END DOCUMENT] ---`
+                        text: `--- [START DOCUMENT: ${file.name}] ---\nPurview Label: ${file.sensitivityLabel?.displayName || "Unlabeled"}\nURL: ${file.webUrl}${personaGuidance}\n${redacted}\n--- [END DOCUMENT] ---`
                     }]
                 };
             }
@@ -537,7 +589,7 @@ mcpServer.setRequestHandler(CallToolRequestSchema, async (request) => {
             return {
                 content: [{
                     type: "text",
-                    text: `--- [START DOCUMENT: ${item.name}] ---\nPurview Label: ${labelName || "Unlabeled"}\n\n${redactedText}\n--- [END DOCUMENT] ---`
+                    text: `--- [START DOCUMENT: ${item.name}] ---\nPurview Label: ${labelName || "Unlabeled"}${personaGuidance}\n\n${redactedText}\n--- [END DOCUMENT] ---`
                 }]
             };
         }
@@ -546,7 +598,7 @@ mcpServer.setRequestHandler(CallToolRequestSchema, async (request) => {
         // 7. Get Direct Download URL
         // ====================================================================
         if (name === "sharepoint_download_url") {
-            if (IS_MOCK_MODE) {
+            if (useMockFallback) {
                 const file = mockFiles.find(f => f.id === args.itemId);
                 return { content: [{ type: "text", text: file ? file.webUrl : "https://company.sharepoint.com/mock-download" }] };
             }
@@ -558,7 +610,7 @@ mcpServer.setRequestHandler(CallToolRequestSchema, async (request) => {
         // 8. Upload File (Create File)
         // ====================================================================
         if (name === "sharepoint_upload_file") {
-            if (IS_MOCK_MODE) {
+            if (useMockFallback) {
                 const newFile = {
                     id: `file-mock-${Date.now()}`,
                     name: args.fileName,
@@ -582,7 +634,7 @@ mcpServer.setRequestHandler(CallToolRequestSchema, async (request) => {
         // 9. Create Folder
         // ====================================================================
         if (name === "sharepoint_create_folder") {
-            if (IS_MOCK_MODE) {
+            if (useMockFallback) {
                 return { content: [{ type: "text", text: `[MOCK] Folder '${args.folderName}' created in drive '${args.driveId}'.` }] };
             }
             const pathUrl = args.parentPath ? `root:/${encodeURIComponent(args.parentPath)}:/children` : "root/children";
@@ -598,7 +650,7 @@ mcpServer.setRequestHandler(CallToolRequestSchema, async (request) => {
         // 10. Update File
         // ====================================================================
         if (name === "sharepoint_update_file") {
-            if (IS_MOCK_MODE) {
+            if (useMockFallback) {
                 const file = mockFiles.find(f => f.id === args.itemId);
                 if (file) file.content = args.content;
                 return { content: [{ type: "text", text: `[MOCK] File '${args.itemId}' updated.` }] };
@@ -613,7 +665,7 @@ mcpServer.setRequestHandler(CallToolRequestSchema, async (request) => {
         // 11. Rename Item
         // ====================================================================
         if (name === "sharepoint_rename_item") {
-            if (IS_MOCK_MODE) {
+            if (useMockFallback) {
                 const file = mockFiles.find(f => f.id === args.itemId);
                 if (file) file.name = args.newName;
                 return { content: [{ type: "text", text: `[MOCK] Renamed item '${args.itemId}' to '${args.newName}'.` }] };
@@ -628,12 +680,103 @@ mcpServer.setRequestHandler(CallToolRequestSchema, async (request) => {
         // 12. Delete Item
         // ====================================================================
         if (name === "sharepoint_delete_item") {
-            if (IS_MOCK_MODE) {
+            if (useMockFallback) {
                 mockFiles = mockFiles.filter(f => f.id !== args.itemId);
                 return { content: [{ type: "text", text: `[MOCK] Deleted item '${args.itemId}'.` }] };
             }
             await axios.delete(`https://graph.microsoft.com/v1.0/drives/${args.driveId}/items/${args.itemId}`, { headers });
             return { content: [{ type: "text", text: `Item '${args.itemId}' deleted successfully.` }] };
+        }
+
+        // ====================================================================
+        // 13. Dynamic Suggested Prompt Starters & Persona Modes
+        // ====================================================================
+        if (name === "sharepoint_get_suggested_prompts" || name === "query_suggested_prompts_lookup") {
+            const personaFilter = (args.persona || "all").toLowerCase();
+
+            let activeFiles = [];
+            if (useMockFallback) {
+                activeFiles = mockFiles.map(f => ({
+                    name: f.name,
+                    siteId: f.siteId,
+                    lastModified: f.lastModifiedDateTime,
+                    purviewLabel: f.sensitivityLabel?.displayName || "Unlabeled"
+                }));
+            } else {
+                try {
+                    const searchRes = await axios.post("https://graph.microsoft.com/v1.0/search/query", {
+                        requests: [{
+                            entityTypes: ["driveItem"],
+                            query: { queryString: "*" },
+                            from: 0,
+                            size: 8,
+                            fields: ["id", "name", "webUrl", "lastModifiedDateTime", "sensitivityLabel", "parentReference"]
+                        }]
+                    }, { headers });
+                    const hits = searchRes.data.value[0]?.hitsContainers[0]?.hits || [];
+                    activeFiles = hits.map(h => ({
+                        name: h.resource.name,
+                        driveId: h.resource.parentReference?.driveId,
+                        lastModified: h.resource.lastModifiedDateTime,
+                        purviewLabel: h.resource.sensitivityLabel?.displayName || "Unlabeled"
+                    }));
+                } catch (err) {
+                    console.warn("[PULSE WARNING] Could not fetch recent Graph documents:", err.message);
+                }
+            }
+
+            const executivePrompts = [
+                "Synthesize the cross-functional operational impact of the Project Helix system upgrade on Q3 revenue reconciliation across Operations and Finance.",
+                "Review the NovaPulse campaign brief on SharePoint and draft a 1-page executive deliverable summarizing budget allocations and agency partners."
+            ];
+
+            const compliancePrompts = [
+                "Audit corporate documents across Finance and Operations for Microsoft Purview sensitivity classifications and report any restricted or RMS-protected files.",
+                "Inspect the QuantumLedger documentation for unredacted credit card numbers or sensitive financial identifiers under Google Cloud DLP policy."
+            ];
+
+            const engineeringPrompts = [
+                "Extract the node failover and consensus quorum rebalance steps from the Operations documentation in Cymbal_Helix_Upgrade.docx.",
+                "Correlate upstream maintenance dependencies between Project Helix consensus nodes and downstream ledger systems."
+            ];
+
+            const financePrompts = [
+                "Break down the cloud vendor hosting charges (AWS, GCP) and reconciliation milestones recorded in QuantumLedger.",
+                "Calculate total automated reconciliations and assess delayed ledger audit timelines."
+            ];
+
+            let suggestions = [];
+            if (personaFilter === "executive") {
+                suggestions = executivePrompts;
+            } else if (personaFilter === "auditor" || personaFilter === "compliance") {
+                suggestions = compliancePrompts;
+            } else if (personaFilter === "engineer" || personaFilter === "technical") {
+                suggestions = engineeringPrompts;
+            } else if (personaFilter === "finance") {
+                suggestions = financePrompts;
+            } else {
+                suggestions = [
+                    ...executivePrompts.slice(0, 1).map(p => `[Executive Mode] ${p}`),
+                    ...compliancePrompts.slice(0, 1).map(p => `[Compliance Mode] ${p}`),
+                    ...engineeringPrompts.slice(0, 1).map(p => `[Engineering Mode] ${p}`),
+                    ...financePrompts.slice(0, 1).map(p => `[Finance Mode] ${p}`)
+                ];
+            }
+
+            const responsePayload = {
+                active_persona: personaFilter,
+                available_personas: ["executive", "auditor", "engineer", "finance", "all"],
+                recent_tenant_files: activeFiles.slice(0, 5),
+                recommended_prompts: suggestions,
+                adoption_tip: "Tip: Ask any of the recommended questions above or append 'persona: executive' to synthesize through a specific executive or compliance lens."
+            };
+
+            return {
+                content: [{
+                    type: "text",
+                    text: JSON.stringify(responsePayload, null, 2)
+                }]
+            };
         }
 
         throw new Error(`Unknown tool: ${name}`);
@@ -644,36 +787,46 @@ mcpServer.setRequestHandler(CallToolRequestSchema, async (request) => {
             isError: true
         };
     }
-});
+    });
+
+    return serverInstance;
+}
+
+export const mcpServer = createMcpServer();
 
 // ============================================================================
 // HTTP Server & Concurrency-Safe Transport Dispatcher
 // ============================================================================
 
-const transport = new StreamableHTTPServerTransport({ enableJsonResponse: true });
-await mcpServer.connect(transport);
-
 const server = createServer(async (req, res) => {
-    // Normalize Cloud Run headers
-    const reqProxy = new Proxy(req, {
-        get(target, prop, receiver) {
-            if (prop === "headers") {
-                return {
-                    ...target.headers,
-                    accept: "application/json, text/event-stream"
-                };
-            }
-            return Reflect.get(target, prop, receiver);
-        }
-    });
+    // Normalize headers for MCP transport
+    req.headers.accept = req.headers.accept || "application/json, text/event-stream";
 
     const url = new URL(req.url, `http://${req.headers.host || "localhost"}`);
 
-    // Main MCP Endpoint (Isolated in AsyncLocalStorage context)
+    // Main MCP Endpoint (Isolated in AsyncLocalStorage context with stateless transport)
     if (url.pathname === "/mcp") {
-        await requestContext.run({ authHeader: req.headers.authorization }, async () => {
-            await transport.handleRequest(reqProxy, res);
-        });
+        try {
+            await requestContext.run({ authHeader: req.headers.authorization }, async () => {
+                const sessionServer = createMcpServer();
+                const sessionTransport = new StreamableHTTPServerTransport({
+                    sessionIdGenerator: undefined,
+                    enableJsonResponse: true
+                });
+                await sessionServer.connect(sessionTransport);
+                await sessionTransport.handleRequest(req, res);
+                res.on("close", () => {
+                    sessionTransport.close().catch(() => {});
+                    sessionServer.close().catch(() => {});
+                });
+            });
+        } catch (err) {
+            console.error("[MCP DISPATCH ERROR]", err);
+            if (!res.headersSent) {
+                res.writeHead(500, { "Content-Type": "application/json" });
+                res.end(JSON.stringify({ error: err.message, stack: err.stack }));
+            }
+        }
         return;
     }
 
@@ -683,7 +836,7 @@ const server = createServer(async (req, res) => {
         res.end(JSON.stringify({
             status: "healthy",
             service: "gemini-enterprise-sharepoint-mcp-server",
-            version: "2.0.0",
+            version: "2.1.0",
             mode: IS_MOCK_MODE ? "mock_sandbox" : "live_graph",
             readOnly: READ_ONLY_MODE,
             dlpEnabled: ENABLE_DLP

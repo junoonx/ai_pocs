@@ -16,6 +16,15 @@ echo ""
 
 # 1. Verify Google Cloud SDK
 if ! command -v gcloud >/dev/null 2>&1; then
+    for candidate in "/usr/local/google/home/xahmed/DevProjects/google-cloud-sdk/bin" "$HOME/google-cloud-sdk/bin"; do
+        if [ -x "$candidate/gcloud" ]; then
+            export PATH="$candidate:$PATH"
+            break
+        fi
+    done
+fi
+
+if ! command -v gcloud >/dev/null 2>&1; then
     echo "❌ Error: Google Cloud SDK ('gcloud') is not installed or not in PATH."
     echo "Install gcloud from https://cloud.google.com/sdk/docs/install and retry."
     exit 1

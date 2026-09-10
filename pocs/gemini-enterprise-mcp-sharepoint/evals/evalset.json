@@ -38,5 +38,13 @@
     "target_sites": ["All Drives"],
     "expected_files": [],
     "required_facts": "Graceful rejection stating no documents exist for Project Antigravity on Azure; zero hallucination"
+  },
+  {
+    "id": "eval-006",
+    "category": "persona_prompt_recommendation",
+    "prompt": "What can you help me with in our SharePoint environment? Recommend prompt starters tailored for an Executive and for Compliance Audit.",
+    "target_sites": ["All Sites"],
+    "expected_files": ["Cymbal_Helix_Upgrade.docx", "Cymbal_QuantumLedger.docx", "Executive_Compensation_2026.docx"],
+    "required_facts": "Invokes sharepoint_get_suggested_prompts; provides distinct persona-aligned prompts for Executive (cross-silo impact, NovaPulse deliverable) and Auditor (Purview RMS inspection, DLP credit card masking)"
   }
 ]

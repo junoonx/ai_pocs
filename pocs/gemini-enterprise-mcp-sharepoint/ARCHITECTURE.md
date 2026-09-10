@@ -17,7 +17,7 @@ flowchart TD
     end
 
     subgraph GCPPlatform ["2. Google Cloud Integration Tier"]
-        GE_Connector["Custom MCP Server Data Connector<br/>• Discovery Engine Action Gateway<br/>• 12 Enabled Custom Actions"]
+        GE_Connector["Custom MCP Server Data Connector<br/>• Discovery Engine Action Gateway<br/>• 13 Enabled Custom Actions"]
         GE_Agent -->|tools/call RPC| GE_Connector
 
         subgraph CloudRunService ["Cloud Run Private MCP Middleware (us-central1)"]

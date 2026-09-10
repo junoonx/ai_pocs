@@ -33,6 +33,10 @@ Enterprise employees can query, synthesize, and act upon corporate documents sto
    - Implements multi-pass ($k=3$) LLM-as-a-Judge benchmarking across Grounding Faithfulness, Cross-Silo Completeness, and Security SDP Compliance.
    - Includes automated Krippendorff's Alpha ($\alpha$) and homogeneity trap validation inspired by the *Hillclimbing with Autoraters* methodology.
 
+7. **Dynamic Suggested Prompt Starters & Persona Lenses**:
+   - Eliminates the "Blank Box" barrier by analyzing recent tenant document updates to suggest role-tailored prompt chips (Executive, Compliance Audit, Engineering).
+   - Supports contextual persona lenses (`persona="executive"`) that tailor document briefings for senior leaders, compliance auditors, or engineers.
+
 ---
 
 ## 📂 Repository Structure

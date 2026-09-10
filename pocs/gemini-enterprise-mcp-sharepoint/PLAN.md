@@ -18,7 +18,7 @@ This implementation plan outlines the 4 core deployment milestones for launching
 - [ ] **Checkpoint 2.2**: Execute `./deploy_gcp_environment.sh` to deploy the private Cloud Run service (`--no-allow-unauthenticated`).
 - [ ] **Checkpoint 2.3**: Verify that `MS_GRAPH_CLIENT_SECRET` is securely vaulted in Google Cloud Secret Manager.
 - [ ] **Checkpoint 2.4**: Bind `roles/run.invoker` to the Discovery Engine Service Agent (`service-${PROJECT_NUM}@gcp-sa-discoveryengine.iam.gserviceaccount.com`).
-- [ ] **Checkpoint 2.5**: Perform handshake test against `/mcp` using `tools/list` to verify all 12 tools are registered.
+- [ ] **Checkpoint 2.5**: Perform handshake test against `/mcp` using `tools/list` to verify all 13 tools are registered.
 
 ---
 
@@ -26,7 +26,7 @@ This implementation plan outlines the 4 core deployment milestones for launching
 - [ ] **Checkpoint 3.1**: Open Gemini Enterprise Console directly: `https://console.cloud.google.com/gemini-enterprise/data-stores/create?project=YOUR_PROJECT_ID`.
 - [ ] **Checkpoint 3.2**: Register **Custom MCP Server** with Cloud Run `/mcp` URL and configure OAuth 2.0 parameters.
 - [ ] **Checkpoint 3.3**: Perform OAuth login and verify connector status transitions to **Active**.
-- [ ] **Checkpoint 3.4**: Open the **Actions** tab, click **Reload custom actions**, and enable all 12 tools.
+- [ ] **Checkpoint 3.4**: Open the **Actions** tab, click **Reload custom actions**, and enable all 13 tools.
 - [ ] **Checkpoint 3.5**: Connect data store to Gemini Enterprise App (`gemini-enterprise-app`).
 
 ---
@@ -35,5 +35,6 @@ This implementation plan outlines the 4 core deployment milestones for launching
 - [ ] **Checkpoint 4.1**: Execute live conversational query in Gemini Enterprise webapp (*"Search SharePoint sites related to Cymbal Operations"*).
 - [ ] **Checkpoint 4.2**: Verify that Gemini Enterprise invokes `Query Sharepoint Sites Lookup` and returns live grounded metadata.
 - [ ] **Checkpoint 4.3**: Test multi-format document text extraction (`sharepoint_read_file`) and confirm inline DLP masking.
-- [ ] **Checkpoint 4.4**: Execute the statistical autorater evaluation suite (`python3 evals/autorater.py`).
-- [ ] **Checkpoint 4.5**: Run `python3 evals/evaluate_reliability.py` to confirm the quality gate passes ($\text{Mean} \ge 4.0$, $\text{Variance} > 0.10$, Krippendorff's $\alpha \ge 0.80$).
+- [ ] **Checkpoint 4.4**: Test dynamic prompt recommendations (`sharepoint_get_suggested_prompts`) across Executive, Compliance, and Engineering persona lenses.
+- [ ] **Checkpoint 4.5**: Execute the statistical autorater evaluation suite (`python3 evals/autorater.py`).
+- [ ] **Checkpoint 4.6**: Run `python3 evals/evaluate_reliability.py` to confirm the quality gate passes ($\text{Mean} \ge 4.0$, $\text{Variance} > 0.10$, Krippendorff's $\alpha \ge 0.80$).

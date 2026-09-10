@@ -7,6 +7,16 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SERVER_DIR="${SCRIPT_DIR}/mcp-server"
 
+# Auto-discover Google Cloud SDK if not in standard PATH
+if ! command -v gcloud >/dev/null 2>&1; then
+    for candidate in "/usr/local/google/home/xahmed/DevProjects/google-cloud-sdk/bin" "$HOME/google-cloud-sdk/bin"; do
+        if [ -x "$candidate/gcloud" ]; then
+            export PATH="$candidate:$PATH"
+            break
+        fi
+    done
+fi
+
 # Default configuration (override via env or flags)
 PROJECT_ID="${GCP_PROJECT_ID:-$(gcloud config get-value project 2>/dev/null || echo "")}"
 REGION="${GCP_REGION:-us-central1}"

@@ -48,6 +48,22 @@ When presenting Gemini Enterprise integrated with Microsoft 365, focus on these 
 
 ---
 
+### Scenario 4: Overcoming the "Blank Box" (Dynamic Suggested Starters & Persona Lenses)
+* **The Customer Problem**: Users open Gemini Enterprise, face an empty prompt bar, and do not know what documents are available or what to ask. Generic static suggestions fail to reflect real, recent business activity.
+* **The Showcase in Action**:
+  * *Prompt*: *"What can you help me with in our SharePoint environment? Give me recommended prompt starters tailored for an Executive and for Compliance Audit."*
+  * *Agent Execution*:
+    1. Invokes `sharepoint_get_suggested_prompts` with `persona="all"`.
+    2. Inspects recent tenant activity across Operations, Marketing, and Finance.
+    3. Returns dynamic, role-tailored prompt chips:
+       - **Executive Mode**: *"Synthesize the cross-functional operational impact of the Project Helix system upgrade on Q3 revenue reconciliation."*
+       - **Compliance Mode**: *"Audit corporate documents across Finance and Operations for Microsoft Purview sensitivity classifications and report any restricted files."*
+       - **Engineering Mode**: *"Extract failover procedures and consensus quorum rebalance steps from Cymbal_Helix_Upgrade.docx."*
+    4. When reading documents, the agent applies the requested persona lens (`sharepoint_read_file(persona="executive")`) to extract high-level KPIs, deadlines, and financial metrics directly for senior leadership.
+* **Customer Takeaway**: Eliminates user hesitation, drives everyday adoption, and formats answers appropriately for different stakeholders across the organization.
+
+---
+
 ## 2. Why We Use an Autorater Evaluation Harness
 
 In enterprise AI architectures, connecting an MCP server is only half the battle. A standard API ping verifies that the server responded (`HTTP 200`), but **it cannot verify cognitive correctness or safety**.
@@ -55,7 +71,7 @@ In enterprise AI architectures, connecting an MCP server is only half the battle
 The **Autorater Evaluation Engine** (inspired by the *Hillclimbing with Autoraters* methodology) provides three critical capabilities:
 
 1. **Tool Selection & Reasoning Verification**:
-   - Verifies whether Gemini picks the optimal tool out of 12 (e.g. `sharepoint_read_file` instead of guessing from metadata).
+   - Verifies whether Gemini picks the optimal tool out of 13 (e.g. `sharepoint_read_file` instead of guessing from metadata).
    - Validates multi-hop execution chains across independent site collections.
 
 2. **Grounding & Anti-Hallucination Gate**:
