@@ -1,0 +1,3 @@
+[submodule "external_repos/l400-managing-production-agents"]
+	path = external_repos/l400-managing-production-agents
+	url = https://github.com/leiterenato/l400-managing-production-agents.git

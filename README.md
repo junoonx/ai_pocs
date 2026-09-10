@@ -42,6 +42,9 @@ ai_pocs/
 ├── AGENTS.md                           # Top-level AI agent and contributor guidelines
 ├── README.md                           # PoC catalog and launcher documentation (this file)
 ├── setup.sh                            # Master launcher ("setup X POC")
+├── external_repos/                     # Upstream reference architectures & production blueprints
+│   ├── README.md                       # External repositories catalog and sync instructions
+│   └── l400-managing-production-agents # L400 talk: Eval-driven development, resilience & zero-trust
 └── pocs/
     └── <poc-name>/
         ├── AGENTS.md                   # PoC-specific implementation rules
