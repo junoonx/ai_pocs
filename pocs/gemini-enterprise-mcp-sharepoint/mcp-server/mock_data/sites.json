@@ -1,0 +1,41 @@
+[
+  {
+    "id": "site-marketing-001",
+    "name": "Cymbal Marketing",
+    "description": "Global marketing initiatives, brand enablement, and campaign briefs.",
+    "webUrl": "https://company.sharepoint.com/sites/CymbalMarketing",
+    "drives": [
+      {
+        "id": "drive-marketing-docs",
+        "name": "Documents",
+        "webUrl": "https://company.sharepoint.com/sites/CymbalMarketing/Shared%20Documents"
+      }
+    ]
+  },
+  {
+    "id": "site-operations-002",
+    "name": "Cymbal Operations",
+    "description": "Infrastructure engineering runbooks, Helix system upgrades, and cluster failover SOPs.",
+    "webUrl": "https://company.sharepoint.com/sites/CymbalOperations",
+    "drives": [
+      {
+        "id": "drive-operations-docs",
+        "name": "Documents",
+        "webUrl": "https://company.sharepoint.com/sites/CymbalOperations/Shared%20Documents"
+      }
+    ]
+  },
+  {
+    "id": "site-finance-003",
+    "name": "Cymbal Finance",
+    "description": "Ledger reconciliation, quarterly forecasts, tooling consolidation, and vendor billings.",
+    "webUrl": "https://company.sharepoint.com/sites/CymbalFinance",
+    "drives": [
+      {
+        "id": "drive-finance-docs",
+        "name": "Documents",
+        "webUrl": "https://company.sharepoint.com/sites/CymbalFinance/Shared%20Documents"
+      }
+    ]
+  }
+]

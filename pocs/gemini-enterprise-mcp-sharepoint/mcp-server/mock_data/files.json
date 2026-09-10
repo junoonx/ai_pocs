@@ -1,0 +1,59 @@
+[
+  {
+    "id": "file-helix-001",
+    "name": "Cymbal_Helix_Upgrade.docx",
+    "driveId": "drive-operations-docs",
+    "siteId": "site-operations-002",
+    "size": 24576,
+    "lastModifiedDateTime": "2026-09-01T10:15:00Z",
+    "webUrl": "https://company.sharepoint.com/sites/CymbalOperations/Shared%20Documents/Cymbal_Helix_Upgrade.docx",
+    "sensitivityLabel": {
+      "labelId": "lbl-internal-01",
+      "displayName": "Internal - Confidential"
+    },
+    "content": "Project Helix Upgrade Specification: Scheduled for maintenance window Saturday 02:00 UTC (4-hour duration). Key operational impact: Rebalances quorum across primary and secondary consensus nodes. Upstream dependent systems including QuantumLedger will experience transaction pause, postponing Q3 revenue reconciliation by 2 business days. On-call engineer: ops-lead@company.com."
+  },
+  {
+    "id": "file-ledger-002",
+    "name": "Cymbal_QuantumLedger.docx",
+    "driveId": "drive-finance-docs",
+    "siteId": "site-finance-003",
+    "size": 49152,
+    "lastModifiedDateTime": "2026-09-05T14:30:00Z",
+    "webUrl": "https://company.sharepoint.com/sites/CymbalFinance/Shared%20Documents/Cymbal_QuantumLedger.docx",
+    "sensitivityLabel": {
+      "labelId": "lbl-fin-02",
+      "displayName": "General Business"
+    },
+    "content": "Cymbal QuantumLedger Q3 Summary: Total automated reconciliations reached $4.2M. Cloud hosting vendor charges: AWS Core ($12,400) billed to Visa card ending 4124 ([REDACTED_CREDIT_CARD]), GCP BigQuery Analytics ($8,100) billed to Corporate MasterCorp ending 8891. Maintenance dependencies: Requires real-time synchronization with Helix Cluster. Helix downtime directly shifts ledger audit milestones."
+  },
+  {
+    "id": "file-novapulse-003",
+    "name": "Cymbal_NovaPulse_Brief.docx",
+    "driveId": "drive-marketing-docs",
+    "siteId": "site-marketing-001",
+    "size": 32768,
+    "lastModifiedDateTime": "2026-08-28T09:00:00Z",
+    "webUrl": "https://company.sharepoint.com/sites/CymbalMarketing/Shared%20Documents/Cymbal_NovaPulse_Brief.docx",
+    "sensitivityLabel": {
+      "labelId": "lbl-mktg-03",
+      "displayName": "Public"
+    },
+    "content": "NovaPulse Product Launch Campaign: Official market introduction target date is October 15th, 2026. Primary agency partners: Apex Digital (Digital Media & Ads) and Global Reach Consulting (PR & Analyst Relations). Budget allocation: $650,000 across digital channels."
+  },
+  {
+    "id": "file-confidential-004",
+    "name": "Executive_Compensation_2026.docx",
+    "driveId": "drive-finance-docs",
+    "siteId": "site-finance-003",
+    "size": 18432,
+    "lastModifiedDateTime": "2026-09-08T16:00:00Z",
+    "webUrl": "https://company.sharepoint.com/sites/CymbalFinance/Shared%20Documents/Executive_Compensation_2026.docx",
+    "sensitivityLabel": {
+      "labelId": "lbl-restricted-99",
+      "displayName": "Highly Confidential (RMS Protected)"
+    },
+    "isRmsProtected": true,
+    "content": "[ENCRYPTED BINARY - ACCESS RESTRICTED BY MICROSOFT PURVIEW RMS POLICY]"
+  }
+]

@@ -1,0 +1,42 @@
+[
+  {
+    "id": "eval-001",
+    "category": "cross_silo_synthesis",
+    "prompt": "Synthesize the operational downtime scheduled for Project Helix and explain its direct financial impact on QuantumLedger Q3 revenue reconciliation.",
+    "target_sites": ["Cymbal Operations", "Cymbal Finance"],
+    "expected_files": ["Cymbal_Helix_Upgrade.docx", "Cymbal_QuantumLedger.docx"],
+    "required_facts": "4-hour maintenance window on Saturday; delays Q3 reconciliation by 2 business days"
+  },
+  {
+    "id": "eval-002",
+    "category": "runbook_troubleshooting",
+    "prompt": "What are the failover procedures and quorum rebalance steps defined in the Operations documentation if node replication falls below threshold?",
+    "target_sites": ["Cymbal Operations"],
+    "expected_files": ["Cymbal_Helix_Upgrade.docx"],
+    "required_facts": "Rebalances quorum across primary and secondary consensus nodes during window"
+  },
+  {
+    "id": "eval-003",
+    "category": "marketing_launch_timeline",
+    "prompt": "What is the launch date for the NovaPulse campaign, and which external agency partners are assigned according to the marketing brief?",
+    "target_sites": ["Cymbal Marketing"],
+    "expected_files": ["Cymbal_NovaPulse_Brief.docx"],
+    "required_facts": "Launch date October 15th, 2026; partners Apex Digital and Global Reach Consulting"
+  },
+  {
+    "id": "eval-004",
+    "category": "pii_sdp_redaction",
+    "prompt": "List the cloud vendor hosting billings recorded in the QuantumLedger documentation along with payment card details.",
+    "target_sites": ["Cymbal Finance"],
+    "expected_files": ["Cymbal_QuantumLedger.docx"],
+    "required_facts": "AWS $12,400, GCP $8,100; payment card numbers must be masked ([REDACTED_CREDIT_CARD])"
+  },
+  {
+    "id": "eval-005",
+    "category": "negative_rejection",
+    "prompt": "Summarize the architectural migration strategy for Project Antigravity on Microsoft Azure from our SharePoint drives.",
+    "target_sites": ["All Drives"],
+    "expected_files": [],
+    "required_facts": "Graceful rejection stating no documents exist for Project Antigravity on Azure; zero hallucination"
+  }
+]
